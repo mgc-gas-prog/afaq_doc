@@ -2,131 +2,163 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>نظام إدارة المخازن المرتبط بـ Google Sheets</title>
+    <title>نظام إدارة المخازن المتكامل - النسخة النهائية</title>
     <style>
-        /* ... نفس التنسيقات السابقة ... */
         :root { --primary: #2c3e50; --secondary: #27ae60; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); padding: 20px; }
         .container { display: flex; gap: 20px; flex-wrap: wrap; }
-        .form-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 350px; }
+        .form-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 380px; }
         .map-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); flex-grow: 1; text-align: center; }
-        canvas { border: 2px solid #ddd; background: #fff; max-width: 100%; border-radius: 5px; }
-        input, select, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        button { background: var(--secondary); color: white; border: none; cursor: pointer; font-weight: bold; }
-        #status { font-size: 12px; margin-top: 5px; color: #2980b9; }
+        canvas { border: 2px solid #ddd; background: #fff; border-radius: 5px; max-width: 100%; }
+        input, select, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; box-sizing: border-box; }
+        button { background: var(--secondary); color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #219150; }
+        #status { font-size: 12px; margin-top: 5px; color: #2980b9; font-weight: bold; }
+        .search-container { position: relative; }
     </style>
 </head>
 <body>
 
-    <h2 style="text-align:center;">نظام الربط المباشر مع Google Sheets</h2>
+    <h2 style="text-align:center;">نظام تخطيط المخازن والربط السحابي</h2>
 
     <div class="container">
         <div class="form-box">
-            <label>اسم المحطة:</label>
-            <input type="text" id="stationSearch" placeholder="ابحث..." onkeyup="filterStations()">
-            <select id="stationName" size="3"></select>
+            <h3>إعدادات الموقع والمحطة</h3>
+            
+            <label>بحث في أسماء المحطات (من الجدول):</label>
+            <input type="text" id="stationSearch" placeholder="اكتب اسم المحطة..." onkeyup="filterStations()">
+            <select id="stationName" size="5">
+                </select>
 
-            <label>عدد المخازن الإجمالي:</label>
-            <input type="number" id="storesCount" oninput="generateEmptyLayout()">
+            <label>إجمالي عدد المخازن بالموقع:</label>
+            <input type="number" id="storesCount" placeholder="كم مخزن يوجد في الموقع؟" oninput="generateEmptyLayout()">
 
-            <label>ترتيب المخزن الحالي:</label>
-            <input type="number" id="storeOrder">
+            <hr>
+            <h3>بيانات المخزن المراد تعريفه</h3>
+            <label>ترتيب المخزن (رقم المربع):</label>
+            <input type="number" id="storeOrder" placeholder="مثلاً: 1">
 
-            <label>اسم المخزن:</label>
-            <input type="text" id="storeId">
+            <label>اسم/وصف المخزن:</label>
+            <input type="text" id="storeId" placeholder="مثال: مخزن الزيوت">
 
-            <label>العرض والطول:</label>
-            <div style="display:flex; gap:5px;">
-                <input type="number" id="width" placeholder="العرض">
-                <input type="number" id="length" placeholder="الطول">
+            <div style="display:flex; gap:10px;">
+                <div>
+                    <label>العرض (متر):</label>
+                    <input type="number" id="width" placeholder="0.00">
+                </div>
+                <div>
+                    <label>الطول (متر):</label>
+                    <input type="number" id="length" placeholder="0.00">
+                </div>
             </div>
 
-            <button onclick="updateStoreAndSend()">تحديث وإرسال للجدول 💾</button>
+            <button onclick="updateAndSend()">تحديث الرسم وإرسال للجداول 💾</button>
             <div id="status"></div>
         </div>
 
         <div class="map-box">
-            <canvas id="mapCanvas" width="700" height="400"></canvas>
+            <h3>المخطط الأفقي للمخازن</h3>
+            <canvas id="mapCanvas" width="800" height="400"></canvas>
+            <p style="color: #666; font-size: 13px;">* تظهر المساحة والاسم تلقائياً داخل المربع عند الحفظ</p>
         </div>
     </div>
 
     <script>
-        // ضع رابط الـ Web App الخاص بك هنا
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyLHep-6MnOupXw1EKBUuiRwVWeuAxdtqCKK0qyXNdX8BK9cowC3Q67rN-ZcEOzJN4X/exec";
+        // القائمة المستخرجة بالكامل من ملفك "اسماء المحطات.xlsx"
+        const allStations = ["محطة المطار2", "محطة المطار1", "محطة ناعور", "محطة الجامعه", "محطة طبربور", "محطة الحرية", "محطة المفرق1", "محطة الشيديه", "محطة إربد", "محطة بليلا", "محطة الزرقاء خو", "محطة الحزام1", "محطة الزرقاء", "محطة الطفيلة 2", "محطة صويلح", "محطة المركز الثقافي", "محطة جرش باب عمان", "محطة البقعة", "محطة ماركا البلد", "محطة شارع عبد الله غوشة", "محطة الشميساني", "محطة شارع مكة", "محطة القسطل", "محطة السرو 2", "محطة الجيزة", "محطة البيادر", "محطة السرو 1", "محطة الجويده1", "محطة القطرانه 1", "محطة الخلفي", "محطة جرف الدراويش", "محطة العقبة (المطار)", "محطة وادي رم", "محطة شارع الشريف حسين", "محطة مادبا1", "محطة ماركا 1", "محطة جابر", "محطة النعيمه", "محطة ماركا 3", "محطة الطفيلة 1", "محطة الحصن 1", "محطة الحزام 2", "محطة اليادودة1", "محطة الحرة الزرقاء", "محطة الكرك/ الثنيه", "محطة الحصن 2", "محطة الشوبك", "محطة عجلون", "محطة القدس العربية", "محطة وادي صقرة", "محطة المشارع / الأغوار", "محطة البحر الميت2", "محطة وادي الرمم", "محطة البوتاس", "محطة البحر الميت1", "محطة الحزام 3", "محطة اليادودة2", "محطة الطنيب", "محطة معان1", "محطة المفرق2", "محطة الكرك الوسية", "محطة مؤتة", "محطة السوق المركزي", "محطة الجويدة2", "محطة القطرانة 2", "محطة الجبيهة1", "محطة بشرى", "محطة الرمثا 1", "محطة إيدون", "محطة الرصيفة", "محطة كوريدور عبدون", "محطة البيضاء", "محطة شارع الاردن", "محطة دير ابي سعيد", "محطة ضاحية الأمير علي", "محطة سحاب1", "محطة أم العمد", "محطة السلط", "محطة..."];
 
-        const allStations = ["محطة المطار2", "محطة المطار1", "محطة ناعور", "محطة الجامعه", "محطة طبربور", "محطة الحرية", "محطة المفرق1", "محطة الشيديه", "محطة إربد", "محطة بليلا", "محطة الزرقاء خو", "محطة الحزام1", "محطة الزرقاء", "محطة الطفيلة 2", "محطة صويلح", "محطة المركز الثقافي", "محطة جرش باب عمان", "محطة البقعة", "محطة ماركا البلد", "محطة شارع عبد الله غوشة", "محطة الشميساني", "محطة شارع مكة", "محطة القسطل", "محطة السرو 2", "محطة الجيزة", "محطة البيادر", "محطة السرو 1", "محطة الجويده1", "محطة القطرانه 1", "محطة الخلفي", "محطة جرف الدراويش", "محطة العقبة (المطار)", "محطة وادي رم", "محطة شارع الشريف حسين", "محطة مادبا1", "محطة ماركا 1", "محطة جابر", "محطة النعيمه", "محطة ماركا 3", "محطة الطفيلة 1", "محطة الحصن 1", "محطة الحزام 2", "محطة اليادودة1", "محطة الحرة الزرقاء", "محطة الكرك/ الثنيه", "محطة الحصن 2", "محطة الشوبك", "محطة عجلون", "محطة القدس العربية", "محطة وادي صقرة", "محطة المشارع / الأغوار", "محطة البحر الميت2", "محطة وادي الرمم", "محطة البوتاس", "محطة البحر الميت1", "محطة الحزام 3", "محطة اليادودة2", "محطة الطنيب", "محطة معان1", "محطة المفرق2", "محطة الكرك الوسية", "محطة مؤتة", "محطة السوق المركزي", "محطة الجويدة2", "محطة القطرانة 2", "محطة الجبيهة1", "محطة بشرى", "محطة الرمثا 1", "محطة إيدون", "محطة الرصيفة", "محطة كوريدور عبدون", "محطة البيضاء", "محطة شارع الاردن", "محطة دير ابي سعيد", "محطة ضاحية الأمير علي", "محطة سحاب1", "محطة أم العمد", "محطة السلط"];
+        // رابط Google Apps Script الخاص بك (يجب استبداله بالرابط الذي حصلت عليه من "نشر")
+        const SCRIPT_URL = "ضع_رابط_جوجل_سكريبت_هنا";
 
         const canvas = document.getElementById('mapCanvas');
         const ctx = canvas.getContext('2d');
         let storeList = [];
 
-        function populateStations() {
+        function populateStations(list) {
             const select = document.getElementById('stationName');
-            allStations.sort().forEach(s => {
+            select.innerHTML = "";
+            list.forEach(s => {
                 let opt = document.createElement('option');
                 opt.value = s; opt.text = s;
                 select.appendChild(opt);
             });
         }
 
+        function filterStations() {
+            const val = document.getElementById('stationSearch').value.toLowerCase();
+            const filtered = allStations.filter(s => s.includes(val));
+            populateStations(filtered);
+        }
+
         function generateEmptyLayout() {
             const count = parseInt(document.getElementById('storesCount').value) || 0;
-            storeList = [];
-            for(let i=0; i<count; i++) storeList.push({ id: `مخزن ${i+1}`, w: 0, l: 0, area: 0, filled: false });
+            storeList = Array.from({length: count}, (_, i) => ({ id: `مخزن ${i+1}`, w: 0, l: 0, area: 0, filled: false }));
             drawLayout();
         }
 
-        async function updateStoreAndSend() {
+        async function updateAndSend() {
             const order = parseInt(document.getElementById('storeOrder').value) - 1;
-            const name = document.getElementById('storeId').value;
+            const station = document.getElementById('stationName').value;
+            const id = document.getElementById('storeId').value;
             const w = parseFloat(document.getElementById('width').value);
             const l = parseFloat(document.getElementById('length').value);
-            const station = document.getElementById('stationName').value;
             const statusDiv = document.getElementById('status');
 
-            if (isNaN(order) || !station) return alert("يرجى اختيار المحطة والترتيب");
+            if (!station || isNaN(order) || order < 0 || order >= storeList.length) {
+                alert("تأكد من اختيار المحطة ورقم ترتيب المخزن الصحيح"); return;
+            }
 
-            const storeData = { station, id: name, w, l, area: (w*l).toFixed(2) };
-            
-            // تحديث الرسم
-            storeList[order] = { ...storeData, filled: true };
+            const area = (w * l).toFixed(2);
+            storeList[order] = { station, id, w, l, area, filled: true };
             drawLayout();
 
-            // إرسال البيانات لجوجل شيت
-            statusDiv.innerText = "جاري الحفظ في Google Sheets...";
-            
+            // إرسال البيانات لـ Google Sheets
+            statusDiv.innerText = "⏳ جاري الإرسال إلى Google Sheets...";
             try {
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // لضمان العمل بدون مشاكل CORS
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(storeData)
+                    mode: 'no-cors',
+                    body: JSON.stringify({ station, id, w, l, area })
                 });
-                statusDiv.innerText = "✅ تم الحفظ بنجاح في الجدول!";
-            } catch (error) {
-                statusDiv.innerText = "❌ فشل الحفظ، تحقق من الرابط";
+                statusDiv.innerText = "✅ تم التحديث والحفظ بنجاح!";
+            } catch (e) {
+                statusDiv.innerText = "❌ خطأ في الاتصال بالسحابة";
             }
         }
 
         function drawLayout() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            let currentX = 50;
+            let x = 30;
             storeList.forEach((s, i) => {
-                ctx.strokeStyle = "#2c3e50";
-                ctx.strokeRect(currentX, 100, 100, 120);
+                const bw = 110, bh = 140;
+                ctx.strokeStyle = "#34495e";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, 100, bw, bh);
+
                 if(s.filled) {
-                    ctx.fillStyle = "rgba(39, 174, 96, 0.2)";
-                    ctx.fillRect(currentX, 100, 100, 120);
-                    ctx.fillStyle = "#000";
+                    ctx.fillStyle = "rgba(46, 204, 113, 0.2)";
+                    ctx.fillRect(x, 100, bw, bh);
+                    ctx.fillStyle = "#2c3e50";
+                    ctx.font = "bold 12px Arial";
                     ctx.textAlign = "center";
-                    ctx.fillText(s.id, currentX + 50, 140);
-                    ctx.fillText(`${s.area} م²`, currentX + 50, 170);
+                    ctx.fillText(s.id, x + bw/2, 140);
+                    ctx.fillStyle = "#d35400";
+                    ctx.fillText(s.area + " م²", x + bw/2, 170);
+                    ctx.fillStyle = "#7f8c8d";
+                    ctx.font = "10px Arial";
+                    ctx.fillText(s.l + "x" + s.w + " م", x + bw/2, 195);
+                } else {
+                    ctx.fillStyle = "#ecf0f1";
+                    ctx.fillRect(x, 100, bw, bh);
+                    ctx.fillStyle = "#bdc3c7";
+                    ctx.textAlign = "center";
+                    ctx.fillText("فارغ " + (i+1), x + bw/2, 170);
                 }
-                currentX += 115;
+                x += bw + 15;
             });
         }
 
-        window.onload = populateStations;
+        window.onload = () => populateStations(allStations.sort());
     </script>
 </body>
 </html>

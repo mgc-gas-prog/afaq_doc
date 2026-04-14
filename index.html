@@ -2,54 +2,54 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>نظام إدخال بيانات المخازن - المحطات</title>
+    <title>نظام إدارة المخازن المتكامل</title>
     <style>
-        :root { --primary: #2c3e50; --secondary: #27ae60; --bg: #f8f9fa; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); padding: 20px; color: var(--primary); }
-        h2 { text-align: center; color: var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 10px; }
-        .container { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px; }
-        .form-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 320px; }
-        .map-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); flex-grow: 1; min-width: 400px; text-align: center; }
-        canvas { border: 2px solid #ddd; background: #fff; border-radius: 8px; cursor: crosshair; max-width: 100%; }
-        label { display: block; margin-top: 10px; font-weight: bold; font-size: 0.9em; }
-        input, select, button { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
-        button { background: var(--secondary); color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 20px; transition: 0.3s; }
-        button:hover { background: #219150; }
-        table { width: 100%; margin-top: 30px; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        th, td { border: 1px solid #eee; padding: 15px; text-align: center; }
+        :root { --primary: #2c3e50; --secondary: #27ae60; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
+        .container { display: flex; gap: 20px; flex-wrap: wrap; }
+        .form-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 350px; }
+        .map-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); flex-grow: 1; text-align: center; }
+        canvas { border: 2px solid #ddd; background: #fff; cursor: crosshair; max-width: 100%; border-radius: 5px; }
+        input, select, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+        button { background: var(--secondary); color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { opacity: 0.9; }
+        .export-btn { background: #3498db; margin-top: 5px; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; background: white; }
+        th, td { border: 1px solid #eee; padding: 12px; text-align: center; }
         th { background: var(--primary); color: white; }
-        .instruction { color: #666; font-size: 0.85em; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-    <h2>نظام إدخال وإدارة بيانات المخازن</h2>
+    <h2 style="text-align:center;">نظام إدخال بيانات المخازن (كافة المحطات)</h2>
 
     <div class="container">
         <div class="form-box">
-            <h3>إضافة مخزن جديد</h3>
+            <h3>إضافة بيانات</h3>
             
-            <label>اسم المحطة</label>
-            <select id="stationName">
+            <label>بحث واختيار المحطة:</label>
+            <input type="text" id="stationSearch" placeholder="اكتب اسم المحطة للبحث..." onkeyup="filterStations()">
+            <select id="stationName" size="5">
                 </select>
 
-            <label>رقم أو اسم المخزن</label>
-            <input type="text" id="storeId" placeholder="مثال: مخزن A1">
+            <label>اسم/رقم المخزن:</label>
+            <input type="text" id="storeId" placeholder="مثال: مخزن رقم 5">
 
-            <label>العرض (متر)</label>
+            <label>العرض (متر):</label>
             <input type="number" id="width" placeholder="0.00">
 
-            <label>الطول (متر)</label>
+            <label>الطول (متر):</label>
             <input type="number" id="length" placeholder="0.00">
 
-            <p class="instruction">💡 انقر على المخطط يساراً لتحديد موقع البدء قبل الإضافة.</p>
-            <button onclick="addStore()">حفظ وإضافة للمخطط</button>
-            <button onclick="clearData()" style="background:#e74c3c; margin-top:10px;">مسح كافة البيانات</button>
+            <button onclick="addStore()">إضافة للمخطط والجدول</button>
+            <button class="export-btn" onclick="exportToExcel()">تصدير البيانات إلى Excel</button>
+            <button onclick="clearData()" style="background:#e74c3c;">مسح الذاكرة</button>
         </div>
 
         <div class="map-box">
-            <h3>الرسم الافتراضي للموقع (المخطط)</h3>
-            <canvas id="mapCanvas" width="700" height="450"></canvas>
+            <h3>المخطط الافتراضي للموقع</h3>
+            <canvas id="mapCanvas" width="700" height="500"></canvas>
+            <p style="font-size: 12px; color: #666;">* انقر على المربع الأبيض لتحديد زاوية المخزن قبل الضغط على "إضافة"</p>
         </div>
     </div>
 
@@ -57,92 +57,100 @@
         <thead>
             <tr>
                 <th>اسم المحطة</th>
-                <th>اسم المخزن</th>
-                <th>الأبعاد (طول × عرض)</th>
-                <th>المساحة الإجمالية</th>
+                <th>المخزن</th>
+                <th>الأبعاد</th>
+                <th>المساحة (م²)</th>
             </tr>
         </thead>
         <tbody></tbody>
     </table>
 
     <script>
-        const stations = ["محطة المطار2", "محطة ناعور", "محطة الجامعه", "محطة طبربور", "محطة الحرية", "محطة المفرق1", "محطة الشيديه", "محطة إربد", "محطة بليلا", "محطة الزرقاء خو", "محطة الحزام1", "محطة الزرقاء", "محطة الطفيلة 2", "محطة صويلح", "محطة المركز الثقافي", "محطة جرش باب عمان", "محطة البقعة", "محطة ماركا البلد", "محطة الشميساني", "محطة القسطل", "محطة السرو 2", "محطة الجيزة", "محطة البيادر", "محطة القطرانه 1", "محطة العقبة (المطار)", "محطة وادي رم", "محطة مادبا1", "محطة النعيمه", "محطة الحصن 1", "محطة الحرة الزرقاء", "محطة عجلون", "محطة وادي صقرة", "محطة البحر الميت1", "محطة معان1", "محطة السلط"];
+        // كافة المحطات مستخرجة من ملفك
+        const allStations = ["محطة المطار2", "محطة المطار1", "محطة ناعور", "محطة الجامعه", "محطة طبربور", "محطة الحرية", "محطة المفرق1", "محطة الشيديه", "محطة إربد", "محطة بليلا", "محطة الزرقاء خو", "محطة الحزام1", "محطة الزرقاء", "محطة الطفيلة 2", "محطة صويلح", "محطة المركز الثقافي", "محطة جرش باب عمان", "محطة البقعة", "محطة ماركا البلد", "محطة شارع عبد الله غوشة", "محطة الشميساني", "محطة شارع مكة", "محطة القسطل", "محطة السرو 2", "محطة الجيزة", "محطة البيادر", "محطة السرو 1", "محطة الجويده1", "محطة القطرانه 1", "محطة الخلفي", "محطة جرف الدراويش", "محطة العقبة (المطار)", "محطة وادي رم", "محطة شارع الشريف حسين", "محطة مادبا1", "محطة ماركا 1", "محطة جابر", "محطة النعيمه", "محطة ماركا 3", "محطة الطفيلة 1", "محطة الحصن 1", "محطة الحزام 2", "محطة اليادودة1", "محطة الحرة الزرقاء", "محطة الكرك/ الثنيه", "محطة الحصن 2", "محطة الشوبك", "محطة عجلون", "محطة القدس العربية", "محطة وادي صقرة", "محطة المشارع / الأغوار", "محطة البحر الميت2", "محطة وادي الرمم", "محطة البوتاس", "محطة البحر الميت1", "محطة الحزام 3", "محطة اليادودة2", "محطة الطنيب", "محطة معان1", "محطة المفرق2", "محطة الكرك الوسية", "محطة مؤتة", "محطة السوق المركزي", "محطة الجويدة2", "محطة القطرانة 2", "محطة الجبيهة1", "محطة بشرى", "محطة الرمثا 1", "محطة إيدون", "محطة الرصيفة", "محطة كوريدور عبدون", "محطة البيضاء", "محطة شارع الاردن", "محطة دير ابي سعيد", "محطة ضاحية الأمير علي", "محطة سحاب1", "محطة أم العمد", "محطة السلط"];
 
         const select = document.getElementById('stationName');
         const canvas = document.getElementById('mapCanvas');
         const ctx = canvas.getContext('2d');
         let lastClick = { x: 50, y: 50 };
-        let savedStores = JSON.parse(localStorage.getItem('stores')) || [];
+        let stores = JSON.parse(localStorage.getItem('myStores')) || [];
 
-        // تعبئة قائمة المحطات
-        stations.sort().forEach(s => {
-            let opt = document.createElement('option');
-            opt.value = s;
-            opt.innerHTML = s;
-            select.appendChild(opt);
-        });
+        // تعبئة القائمة
+        function populateStations(list) {
+            select.innerHTML = "";
+            list.sort().forEach(s => {
+                let opt = document.createElement('option');
+                opt.value = s; opt.text = s;
+                select.appendChild(opt);
+            });
+        }
 
-        // تحديد الموقع على الكانفاس
+        // تصفية المحطات عند البحث
+        function filterStations() {
+            const val = document.getElementById('stationSearch').value.toLowerCase();
+            const filtered = allStations.filter(s => s.includes(val));
+            populateStations(filtered);
+        }
+
         canvas.addEventListener('mousedown', (e) => {
             const rect = canvas.getBoundingClientRect();
             lastClick.x = e.clientX - rect.left;
             lastClick.y = e.clientY - rect.top;
-            drawAll(); // إعادة رسم لتوضيح نقطة النقر
-            ctx.fillStyle = "red";
-            ctx.beginPath(); ctx.arc(lastClick.x, lastClick.y, 4, 0, Math.PI*2); ctx.fill();
+            draw();
+            ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(lastClick.x, lastClick.y, 4, 0, Math.PI*2); ctx.fill();
         });
 
         function addStore() {
-            const station = document.getElementById('stationName').value;
+            const st = select.value;
             const id = document.getElementById('storeId').value;
             const w = parseFloat(document.getElementById('width').value);
             const l = parseFloat(document.getElementById('length').value);
 
-            if(!id || !w || !l) { alert("يرجى إكمال البيانات"); return; }
+            if(!st || !id || !w || !l) return alert("يرجى اختيار المحطة وتعبئة الأبعاد");
 
-            const newStore = { station, id, w, l, x: lastClick.x, y: lastClick.y, area: (w*l).toFixed(2) };
-            savedStores.push(newStore);
-            localStorage.setItem('stores', JSON.stringify(savedStores));
-            
-            drawAll();
-            updateTable();
-            document.getElementById('storeId').value = "";
+            stores.push({ st, id, w, l, x: lastClick.x, y: lastClick.y });
+            localStorage.setItem('myStores', JSON.stringify(stores));
+            draw(); updateTable();
         }
 
-        function drawAll() {
+        function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            savedStores.forEach(s => {
-                ctx.fillStyle = "rgba(39, 174, 96, 0.3)";
+            stores.forEach(s => {
+                ctx.fillStyle = "rgba(46, 204, 113, 0.4)";
                 ctx.strokeStyle = "#27ae60";
-                ctx.lineWidth = 2;
-                ctx.fillRect(s.x, s.y, s.w * 5, s.l * 5); // مقياس رسم 1متر = 5 بكسل
-                ctx.strokeRect(s.x, s.y, s.w * 5, s.l * 5);
-                ctx.fillStyle = "#2c3e50";
-                ctx.font = "12px Arial";
-                ctx.fillText(s.id, s.x + 5, s.y + 15);
+                ctx.fillRect(s.x, s.y, s.w * 4, s.l * 4); // مقياس 1م = 4بكسل
+                ctx.strokeRect(s.x, s.y, s.w * 4, s.l * 4);
+                ctx.fillStyle = "#000"; ctx.fillText(s.id, s.x + 2, s.y + 10);
             });
         }
 
         function updateTable() {
-            const tbody = document.querySelector('#dataTable tbody');
-            tbody.innerHTML = "";
-            savedStores.forEach(s => {
-                const row = `<tr><td>${s.station}</td><td>${s.id}</td><td>${s.l}م × ${s.w}م</td><td>${s.area} م²</td></tr>`;
-                tbody.innerHTML += row;
+            const body = document.querySelector('#dataTable tbody');
+            body.innerHTML = "";
+            stores.forEach(s => {
+                body.innerHTML += `<tr><td>${s.st}</td><td>${s.id}</td><td>${s.l}x${s.w}</td><td>${(s.l*s.w).toFixed(2)}</td></tr>`;
             });
         }
 
+        function exportToExcel() {
+            let csv = "\ufeffاسم المحطة,المخزن,الأبعاد,المساحة\n";
+            stores.forEach(s => {
+                csv += `${s.st},${s.id},${s.l}x${s.w},${s.l*s.w}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "بيانات_المخازن.csv";
+            link.click();
+        }
+
         function clearData() {
-            if(confirm("هل أنت متأكد من مسح جميع البيانات؟")) {
-                localStorage.removeItem('stores');
-                savedStores = [];
-                drawAll();
-                updateTable();
+            if(confirm("سيتم حذف كل البيانات المسجلة، هل أنت متأكد؟")) {
+                localStorage.clear(); stores = []; draw(); updateTable();
             }
         }
 
-        // تحميل البيانات عند فتح الصفحة
-        window.onload = () => { drawAll(); updateTable(); };
+        window.onload = () => { populateStations(allStations); draw(); updateTable(); };
     </script>
 </body>
 </html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>نظام إدارة المخازن الافتراضي</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; }
+        .container { display: flex; gap: 20px; }
+        .form-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 300px; }
+        .map-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); flex-grow: 1; text-align: center; }
+        canvas { border: 2px dashed #ccc; background: #fafafa; cursor: crosshair; }
+        input, select, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
+        button { background: #28a745; color: white; border: none; cursor: pointer; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; background: white; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        th { background: #eee; }
+    </style>
+</head>
+<body>
+
+    <h2>نظام تسجيل وتسكين المخازن</h2>
+
+    <div class="container">
+        <div class="form-box">
+            <h3>بيانات المخزن</h3>
+            <select id="city">
+                <option>عمان</option>
+                <option>إربد</option>
+                <option>الزرقاء</option>
+            </select>
+            <input type="text" id="storeName" placeholder="اسم/رقم المخزن">
+            <input type="number" id="width" placeholder="العرض (متر)">
+            <input type="number" id="length" placeholder="الطول (متر)">
+            <p>انقر على المخطط لتحديد موقع الزاوية</p>
+            <button onclick="addStore()">إضافة المخزن للمخطط</button>
+        </div>
+
+        <div class="map-box">
+            <h3>المخطط الافتراضي للموقع</h3>
+            <canvas id="mapCanvas" width="600" height="400"></canvas>
+            <p><small>المستطيلات الملونة تمثل مساحة المخازن الفعلية</small></p>
+        </div>
+    </div>
+
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>المحافظة</th>
+                <th>المخزن</th>
+                <th>الأبعاد</th>
+                <th>المساحة (م²)</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        const canvas = document.getElementById('mapCanvas');
+        const ctx = canvas.getContext('2d');
+        let lastClick = { x: 50, y: 50 };
+
+        // تسجيل إحداثيات النقر على الخريطة
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            lastClick.x = e.clientX - rect.left;
+            lastClick.y = e.clientY - rect.top;
+            
+            // رسم نقطة مؤقتة لمكان النقر
+            ctx.fillStyle = "red";
+            ctx.beginPath();
+            ctx.arc(lastClick.x, lastClick.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        function addStore() {
+            const name = document.getElementById('storeName').value;
+            const w = parseFloat(document.getElementById('width').value);
+            const l = parseFloat(document.getElementById('length').value);
+            const city = document.getElementById('city').value;
+
+            if(!name || !w || !l) return alert("يرجى تعبئة كافة البيانات");
+
+            const area = w * l;
+
+            // 1. رسم المخزن على المخطط (بمقياس رسم بسيط 1 متر = 5 بكسل)
+            ctx.fillStyle = "rgba(40, 167, 69, 0.5)";
+            ctx.strokeStyle = "#28a745";
+            ctx.fillRect(lastClick.x, lastClick.y, w * 5, l * 5);
+            ctx.strokeRect(lastClick.x, lastClick.y, w * 5, l * 5);
+            
+            ctx.fillStyle = "#000";
+            ctx.fillText(name, lastClick.x + 5, lastClick.y + 15);
+
+            // 2. إضافة البيانات للجدول
+            const table = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+            const row = table.insertRow();
+            row.innerHTML = `<td>${city}</td><td>${name}</td><td>${l}x${w}</td><td>${area}</td>`;
+
+            // تفريغ الحقول
+            document.getElementById('storeName').value = "";
+        }
+    </script>
+</body>
+</html>

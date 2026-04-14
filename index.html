@@ -4,22 +4,26 @@
     <meta charset="UTF-8">
     <title>AFAQ_DOCS</title>
     <style>
-        :root { --primary: #2c3e50; --secondary: #27ae60; --accent: #e67e22; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); padding: 20px; }
-        .container { display: flex; gap: 20px; flex-wrap: wrap; }
-        .form-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 400px; }
-        .map-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); flex-grow: 1; text-align: center; }
-        canvas { border: 2px solid #ddd; background: #fff; border-radius: 8px; max-width: 100%; }
-        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        :root { --primary: #1a2a3a; --secondary: #27ae60; --accent: #e67e22; --bg: #f0f2f5; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); padding: 20px; color: #333; }
+        .container { display: flex; gap: 20px; flex-wrap: wrap; max-width: 1400px; margin: auto; }
+        .form-box { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); width: 420px; border-top: 5px solid var(--primary); }
+        .map-box { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); flex-grow: 1; text-align: center; }
+        canvas { border: 1px solid #dfe6e9; background: #ffffff; border-radius: 10px; max-width: 100%; margin-top: 15px; }
         
-        .btn-add { background: var(--secondary); color: white; border: none; cursor: pointer; font-weight: bold; }
-        .btn-new-station { background: var(--primary); color: white; border: none; cursor: pointer; margin-bottom: 15px; }
+        h2 { text-align:center; color: var(--primary); font-family: 'Arial Black', sans-serif; letter-spacing: 3px; margin-bottom: 30px; text-transform: uppercase; }
+        label { display: block; margin-top: 12px; font-weight: 600; color: var(--primary); font-size: 0.9em; }
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border: 1.5px solid #dcdde1; border-radius: 8px; font-size: 14px; box-sizing: border-box; transition: 0.3s; }
+        input:focus, select:focus { border-color: var(--secondary); outline: none; box-shadow: 0 0 5px rgba(39, 174, 96, 0.2); }
+        
+        .btn-add { background: var(--secondary); color: white; border: none; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 15px; }
+        .btn-new-station { background: var(--primary); color: white; border: none; cursor: pointer; font-size: 13px; }
         .btn-export { background: #3498db; color: white; border: none; cursor: pointer; }
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
         
-        button:hover { opacity: 0.9; transform: translateY(-1px); }
-        #status { font-size: 13px; margin-top: 5px; color: #2980b9; font-weight: bold; }
-        hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
-        h2 { text-align:center; color: var(--primary); font-family: 'Courier New', Courier, monospace; letter-spacing: 2px; }
+        #status { font-size: 13px; margin-top: 10px; color: #2980b9; font-weight: bold; text-align: center; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 25px 0; }
+        .flex-row { display: flex; gap: 10px; }
     </style>
 </head>
 <body>
@@ -28,42 +32,48 @@
 
     <div class="container">
         <div class="form-box">
-            <h3>1. المحطة والموقع</h3>
+            <h3>📍 إعدادات المحطة</h3>
             
-            <button class="btn-new-station" onclick="addNewStation()">+ إضافة اسم محطة جديد</button>
+            <button class="btn-new-station" onclick="addNewStation()">+ إضافة اسم محطة غير مدرج</button>
             
-            <label>بحث في المحطات:</label>
-            <input type="text" id="stationSearch" placeholder="ابحث عن محطة..." onkeyup="filterStations()">
-            <select id="stationName" size="5"></select>
+            <label>البحث واختيار المحطة:</label>
+            <input type="text" id="stationSearch" placeholder="اكتب للبحث في القائمة الجديدة..." onkeyup="filterStations()">
+            <select id="stationName" size="6"></select>
 
-            <label>إجمالي عدد المخازن في الموقع:</label>
-            <input type="number" id="storesCount" placeholder="أدخل العدد الكلي للمخازن" oninput="generateEmptyLayout()">
+            <label>عدد المخازن في الموقع:</label>
+            <input type="number" id="storesCount" placeholder="إجمالي عدد المخازن" oninput="generateEmptyLayout()">
 
             <hr>
-            <h3>2. بيانات المخزن الحالي</h3>
-            <label>ترتيب المخزن (رقم المربع من اليسار):</label>
+            <h3>📦 بيانات المخزن الحالي</h3>
+            <label>ترتيب المخزن (رقم المربع):</label>
             <input type="number" id="storeOrder" placeholder="مثلاً: 1">
 
-            <label>اسم تعريف المخزن:</label>
-            <input type="text" id="storeId" placeholder="مثال: مخزن المواد الأولية">
+            <label>اسم/وصف المخزن:</label>
+            <input type="text" id="storeId" placeholder="مثلاً: مخزن الكيماويات">
 
-            <div style="display:flex; gap:10px;">
-                <input type="number" id="width" placeholder="العرض (م)">
-                <input type="number" id="length" placeholder="الطول (م)">
+            <div class="flex-row">
+                <div style="flex:1">
+                    <label>العرض (متر):</label>
+                    <input type="number" id="width" placeholder="0.00">
+                </div>
+                <div style="flex:1">
+                    <label>الطول (متر):</label>
+                    <input type="number" id="length" placeholder="0.00">
+                </div>
             </div>
 
-            <button class="btn-add" onclick="updateAndSend()">تحديث المخطط والحفظ 💾</button>
-            <button class="btn-export" style="margin-top:5px;" onclick="exportToExcel()">تصدير كملف Excel مؤقت</button>
+            <button class="btn-add" onclick="updateAndSend()">تحديث المخطط وحفظ البيانات 💾</button>
+            <button class="btn-export" onclick="exportToExcel()">تصدير تقرير AFAQ_DOCS</button>
             <div id="status"></div>
         </div>
 
         <div class="map-box">
-            <h3>المخطط الافتراضي الأفقي</h3>
-            <canvas id="mapCanvas" width="800" height="400"></canvas>
-            <p style="color: #7f8c8d; font-size: 13px;">سيتم رسم المربعات بجانب بعضها بناءً على عدد المخازن</p>
+            <h3>🗺️ المخطط الهندسي الافتراضي للموقع</h3>
+            <canvas id="mapCanvas" width="800" height="450"></canvas>
+            <p style="color: #636e72; font-size: 13px; margin-top: 15px;">يتم ترتيب المخازن أفقياً مع كتابة الاسم والمساحة تلقائياً داخل كل وحدة</p>
         </div>
     </div>
 
     <script>
-        // سيتم تحميل الأسماء من المصفوفة، ويمكنك إضافة المزيد عبر الزر
-        let allStations = ["محطة المطار2", "محطة المطار1", "محطة ناعور", "محطة الجامعه", "محطة طبربور", "محطة الحرية", "محطة المفرق1", "محطة الشيديه", "محطة إربد", "محطة بليلا", "محطة الزرقاء خو", "محطة الحزام1", "محطة الزرقاء", "محطة الطفيلة 2", "محطة صويلح", "محطة المركز الثقافي", "محطة جرش باب عمان", "محطة البقعة", "محطة ماركا البلد", "محطة شارع عبد الله غوشة", "محطة الشميساني", "محطة شارع مكة", "محطة القسطل", "محطة السرو 2", "محطة الجيزة", "مح
+        // القائمة المحدثة بالكامل من ملف الإكسيل الأخير
+        let allStations = ["محطة المطار2", "محطة المطار1", "محطة ناعور", "محطة الجامعه", "محطة طبربور", "محطة الحرية", "محطة المفرق1", "محطة الشيديه", "محطة إربد", "محطة بليلا", "محطة الزرقاء خو", "محطة الحزام1", "محطة الزرقاء", "محطة الطفيلة 2", "محطة صويلح", "محطة المركز الثقافي", "محطة جرش باب عمان", "محطة البقعة", "محطة ماركا البلد", "محطة شارع عبد الله غوشة", "محطة الشميساني
